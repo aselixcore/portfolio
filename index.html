@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alexis Zapia — Java Developer</title>
+<meta name="description" content="Alexis Zapia · Java Developer · Cloud (GCP) · Automatización con Python">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141a;
+    --bg-panel:#181b21;
+    --bg-editor:#14161c;
+    --bg-hover:#1e2129;
+    --border:#262a33;
+    --text:#d6d9e0;
+    --text-dim:#8790a3;
+    --comment:#5c6370;
+    --keyword:#7aa2f7;
+    --type:#e3b7eb;
+    --string:#9ece6a;
+    --func:#e0af68;
+    --accent:#f7768e;
+    --font-mono:'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --font-sans:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:14px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--type); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  ::selection{background:rgba(122,162,247,.35);}
+
+  /* ---------- window chrome ---------- */
+  .window{
+    max-width:1180px;
+    margin:28px auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+    background:var(--bg-editor);
+  }
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    background:var(--bg-panel);
+    border-bottom:1px solid var(--border);
+  }
+  .dots{display:flex; gap:7px;}
+  .dot{width:11px; height:11px; border-radius:50%; background:#5f5a58;}
+  .titlebar-name{
+    flex:1;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12px;
+    letter-spacing:.02em;
+  }
+  .titlebar-menu{width:53px;}
+
+  .app-body{
+    display:grid;
+    grid-template-columns:262px 1fr;
+    min-height:560px;
+  }
+
+  /* ---------- scrollbars a tono con la paleta ---------- */
+  *{
+    scrollbar-width:thin;
+    scrollbar-color:#333844 transparent;
+  }
+  *::-webkit-scrollbar{ height:8px; width:8px; }
+  *::-webkit-scrollbar-track{ background:transparent; }
+  *::-webkit-scrollbar-thumb{ background:#333844; border-radius:4px; }
+  *::-webkit-scrollbar-thumb:hover{ background:#454b5a; }
+  *::-webkit-scrollbar-corner{ background:transparent; }
+
+  /* ---------- explorer ---------- */
+  .explorer{
+    background:var(--bg-panel);
+    border-right:1px solid var(--border);
+    padding:14px 0;
+    overflow-y:auto;
+  }
+  .explorer-title{
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--text-dim);
+    padding:0 16px 10px;
+  }
+  .tree, .tree-sub{list-style:none; margin:0; padding:0;}
+  .tree-sub.collapsed{display:none;}
+  .tree li{padding:0;}
+  .node{
+    display:flex; align-items:center; gap:7px;
+    padding:5px 16px;
+    cursor:pointer;
+    color:var(--text-dim);
+    font-size:12.5px;
+    white-space:nowrap;
+  }
+  .node:hover{background:var(--bg-hover); color:var(--text);}
+  .node.active{background:var(--bg-hover); color:var(--text);}
+  .node.indent{padding-left:30px;}
+  .icon{opacity:.85; width:14px; text-align:center; flex-shrink:0;}
+  .folder-arrow{width:10px; font-size:10px; color:var(--text-dim); flex-shrink:0; transition:transform .12s;}
+  .folder-arrow.closed{transform:rotate(-90deg);}
+
+  /* ---------- editor ---------- */
+  .editor-col{display:flex; flex-direction:column; min-width:0;}
+  .tabbar{
+    display:flex;
+    background:var(--bg-panel);
+    border-bottom:1px solid var(--border);
+    overflow-x:auto;
+  }
+  .tab{
+    display:flex; align-items:center; gap:8px;
+    padding:9px 12px 9px 16px;
+    background:var(--bg-editor);
+    border-right:1px solid var(--border);
+    font-size:13px;
+    color:var(--text-dim);
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .tab.active{color:var(--text); box-shadow:inset 0 -2px 0 var(--keyword);}
+  .tab .tab-close{
+    opacity:0; width:16px; height:16px; border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; color:var(--text-dim);
+  }
+  .tab:hover .tab-close{opacity:1;}
+  .tab .tab-close:hover{background:var(--bg-hover); color:var(--text);}
+
+  .code-scroll{
+    flex:1;
+    overflow-x:auto;
+    overflow-y:auto;
+    padding:18px 0 26px;
+  }
+  .code{display:block; width:100%;}
+  .line{display:flex; align-items:flex-start; width:100%;}
+  .line-no{
+    flex:0 0 auto;
+    text-align:right;
+    padding:0 16px 0 8px;
+    color:#3b3f4a;
+    user-select:none;
+    font-size:12.5px;
+    min-width:38px;
+    white-space:nowrap;
+  }
+  .line-content{
+    flex:1 1 auto;
+    min-width:0;
+    padding:1px 20px 1px 4px;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+
+  .kw{color:var(--keyword);}
+  .tp{color:var(--type);}
+  .str{color:var(--string);}
+  .fn{color:var(--func);}
+  .cm{color:var(--comment); font-style:italic;}
+  .punc{color:var(--text-dim);}
+  .prose{
+    font-family:var(--font-sans);
+    color:var(--text);
+    font-size:13.5px;
+    line-height:1.75;
+  }
+  .tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-dim);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:1px 6px;
+    margin:2px 6px 2px 0;
+  }
+  .links-row a{margin-right:14px;}
+
+  /* ---------- terminal ---------- */
+  .terminal{
+    border-top:1px solid var(--border);
+    background:#0e1015;
+    height:200px;
+    display:flex;
+    flex-direction:column;
+  }
+  .terminal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 14px;
+    font-size:11px;
+    color:var(--text-dim);
+    border-bottom:1px solid var(--border);
+    letter-spacing:.03em;
+  }
+  .terminal-body{flex:1; overflow-y:auto; padding:10px 14px; font-size:13px;}
+  .terminal-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .terminal-line.out{color:var(--text-dim);}
+  .terminal-line .prompt{color:var(--string); margin-right:6px;}
+  .terminal-input-row{display:flex; align-items:center; padding:0 14px 10px;}
+  .terminal-input-row .prompt{color:var(--string); margin-right:6px;}
+  .terminal-input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-family:var(--font-mono); font-size:13px;
+  }
+
+  /* ---------- statusbar ---------- */
+  .statusbar{
+    display:flex; justify-content:space-between;
+    padding:5px 14px; background:#1a3a5c; color:#dbe9fb; font-size:11.5px;
+  }
+  .statusbar span{margin-right:16px;}
+
+  .explorer-toggle{display:none;}
+
+  @media (max-width:780px){
+    .window{margin:0; border-radius:0; border:none;}
+    .app-body{grid-template-columns:1fr;}
+    .explorer{display:none; border-right:none; border-bottom:1px solid var(--border); max-height:240px;}
+    .explorer.open{display:block;}
+    .explorer-toggle{
+      display:flex; align-items:center; gap:6px;
+      background:var(--bg-panel); color:var(--text-dim);
+      border:none; border-bottom:1px solid var(--border);
+      padding:9px 14px; font-family:var(--font-mono); font-size:12px;
+      width:100%; cursor:pointer;
+    }
+    .terminal{height:170px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto !important;} }
+  html{scroll-behavior:smooth;}
+
+  /* ================= BOOT SCREEN ================= */
+  body{ overflow:hidden; }
+  body.booted{ overflow:auto; }
+
+  .window{
+    opacity:0;
+    transition:opacity .7s ease;
+  }
+  .window.visible{ opacity:1; }
+
+  .boot-screen{
+    position:fixed; inset:0; z-index:1000;
+    background:#000;
+    color:#4dff6b;
+    font-family:var(--font-mono);
+    font-size:16px;
+    line-height:1.55;
+    padding:40px 48px;
+    transform-origin:center;
+    animation:crt-on .5s ease-out;
+    transition:opacity .35s ease;
+  }
+  .boot-screen.hidden{ opacity:0; pointer-events:none; }
+
+  .boot-screen::before{
+    content:'';
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px,
+      transparent 2px, transparent 3px
+    );
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+  .boot-screen::after{
+    content:'';
+    position:absolute; inset:0;
+    box-shadow:inset 0 0 140px 40px rgba(0,0,0,.85);
+    pointer-events:none;
+  }
+  .boot-screen.glitch{ transform:skewX(-.6deg) translateX(2px); }
+
+  @keyframes crt-on{
+    0%{ transform:scaleY(.01); opacity:0; }
+    40%{ transform:scaleY(.02); opacity:1; }
+    70%{ transform:scaleY(1.02); }
+    100%{ transform:scaleY(1); }
+  }
+  @keyframes flash-white{
+    0%{ background:#fff; }
+    100%{ background:#000; }
+  }
+  .boot-screen.flash{ animation:flash-white .25s ease-out; }
+
+  .boot-lines{ position:relative; z-index:1; max-width:640px; }
+  .boot-lines div{ min-height:1.55em; white-space:pre-wrap; word-break:break-word; }
+  .boot-cursor{
+    display:inline-block; width:.6em; height:1em; background:#4dff6b;
+    vertical-align:text-bottom; animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .boot-blink{ animation:blink 1s steps(1) infinite; }
+
+  .boot-sound-toggle{
+    position:absolute; top:18px; right:22px;
+    color:#4dff6b; opacity:.7;
+    font-size:12px; cursor:pointer;
+    z-index:2; user-select:none;
+    border:1px solid #235c2f; padding:3px 8px; border-radius:3px;
+  }
+  .boot-sound-toggle:hover{ opacity:1; }
+
+  @media (max-width:780px){
+    .boot-screen{ font-size:13px; padding:26px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="boot-screen" id="bootScreen">
+  <div class="boot-sound-toggle" id="soundToggle">SONIDO: ON</div>
+  <div class="boot-lines" id="bootLines"></div>
+</div>
+
+<div class="window">
+
+  <div class="titlebar">
+    <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    <div class="titlebar-name">AlexisZapia — portfolio</div>
+    <div class="titlebar-menu"></div>
+  </div>
+
+  <button class="explorer-toggle" id="explorerToggle">▸ Explorador</button>
+
+  <div class="app-body">
+
+    <!-- EXPLORER -->
+    <nav class="explorer" id="explorer">
+      <div class="explorer-title">EXPLORADOR — ALEXISZAPIA</div>
+      <ul class="tree">
+        <li><div class="node" data-file="perfil"><span class="icon">📄</span> README.md</div></li>
+
+        <li>
+          <div class="node" data-folder="exp"><span class="folder-arrow">▾</span><span class="icon">📁</span> Experiencia/</div>
+          <ul class="tree-sub" data-folder-body="exp">
+            <li><div class="node indent" data-file="exp-cat"><span class="icon">☕</span> SoporteTecnicoIT.java</div></li>
+          </ul>
+        </li>
+
+        <li>
+          <div class="node" data-folder="proj"><span class="folder-arrow">▾</span><span class="icon">📁</span> Proyectos/</div>
+          <ul class="tree-sub" data-folder-body="proj">
+            <li><div class="node indent" data-file="proj-jdk"><span class="icon">☕</span> JDKLauncher.java</div></li>
+            <li><div class="node indent" data-file="proj-arm"><span class="icon">🟨</span> ARMOnline.js</div></li>
+            <li><div class="node indent" data-file="proj-beam"><span class="icon">🐍</span> BeamNGBlenderToolkit.py</div></li>
+            <li><div class="node indent" data-file="proj-garage"><span class="icon">🌐</span> TheVirtualGarage.html</div></li>
+          </ul>
+        </li>
+
+        <li><div class="node" data-file="stack"><span class="icon">{}</span> stack.json</div></li>
+        <li><div class="node" data-file="educacion"><span class="icon">📄</span> educacion.md</div></li>
+        <li><div class="node" data-file="certificaciones"><span class="icon">📄</span> certificaciones.md</div></li>
+        <li><div class="node" data-file="contacto"><span class="icon">📇</span> contacto.txt</div></li>
+      </ul>
+    </nav>
+
+    <!-- EDITOR -->
+    <div class="editor-col">
+      <div class="tabbar" id="tabbar"></div>
+
+      <div class="code-scroll">
+        <div class="code" id="codeView"></div>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-head">
+          <span>TERMINAL</span>
+          <span>bash — zsh</span>
+        </div>
+        <div class="terminal-body" id="termBody"></div>
+        <div class="terminal-input-row">
+          <span class="prompt">alexis@portfolio:~$</span>
+          <input class="terminal-input" id="termInput" type="text" autocomplete="off" spellcheck="false" placeholder="escribí 'help'">
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <div><span>⎇ main</span><span id="statusLang">Markdown</span><span>UTF-8</span></div>
+        <div><span>Ln <span id="statusLine">1</span></span><span>Spaces: 4</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Tokens de resaltado de sintaxis
+   ========================================================= */
+const KW  = s => `<span class="kw">${s}</span>`;
+const TP  = s => `<span class="tp">${s}</span>`;
+const STR = s => `<span class="str">${s}</span>`;
+const FN  = s => `<span class="fn">${s}</span>`;
+const CM  = s => `<span class="cm">${s}</span>`;
+const PN  = s => `<span class="punc">${s}</span>`;
+const IND = n => '&nbsp;'.repeat(n * 4);
+
+/* =========================================================
+   Definición de "archivos" — cada uno con su propio contenido
+   y resaltado acorde a su lenguaje/extensión
+   ========================================================= */
+const FILES = {};
+
+FILES['perfil'] = {
+  name: 'README.md', icon: '📄', lang: 'Markdown',
+  lines: [
+    {k:'code', html:`${PN('#')} Alexis Zapia`},
+    {k:'code', html:`${STR('Java Developer · Cloud (GCP) · Automatización con Python')}`},
+    {k:'code', html:`Buenos Aires, Argentina`},
+    {k:'code', html:`<a href="mailto:ale03.dev@gmail.com">ale03.dev@gmail.com</a> · <a href="https://github.com/aselixcore" target="_blank" rel="noopener">github.com/aselixcore</a> · <a href="https://linkedin.com/in/alexiszapia" target="_blank" rel="noopener">linkedin.com/in/alexiszapia</a>`},
+    {k:'blank'},
+    {k:'code', html:`${PN('##')} Sobre mí`},
+    {k:'blank'},
+    {k:'prose', html:`Junior developer que construye software completo y publicable, no solo ejercicios de práctica. Mis proyectos independientes resuelven problemas reales: <b>JDK Launcher</b> reemplaza un flujo manual doloroso que sufren miles de developers Java, y <b>ARM Online</b> demuestra que se puede construir un reproductor de música completo sin una sola dependencia externa.`},
+    {k:'blank'},
+    {k:'prose', html:`Actualmente desarrollo un plugin para Blender que automatiza la creación de vehículos para BeamNG.drive. Sumado a esto, cuento con experiencia en soporte técnico IT, brindando asistencia remota a usuarios y resolviendo incidencias de conectividad y configuración.`},
+    {k:'blank'},
+    {k:'prose', html:`Trabajo con Java (J2SE, J2EE, JavaFX) y Python, y estoy sumando Google Cloud (Cloud Digital Leader, en curso) porque me importa entender no solo cómo se escribe el código, sino dónde y cómo vive en producción. Busco un rol junior donde pueda aportar desde el día uno.`},
+  ]
+};
+
+FILES['exp-cat'] = {
+  name: 'SoporteTecnicoIT.java', icon: '☕', lang: 'Java',
+  lines: [
+    {k:'code', html:`${PN('//')} CAT Technologies · Pasante de Soporte Técnico · Ene 2026 – Jun 2026`},
+    {k:'code', html:`${KW('public')} ${KW('class')} ${TP('SoporteTecnicoIT')} ${PN('{')}`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}<span class="tag">Soporte remoto</span><span class="tag">Diagnóstico de incidencias</span><span class="tag">Conectividad</span><span class="tag">Configuración</span><span class="tag">Audio</span><span class="tag">Orange (VM)</span>`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}Brindé soporte técnico de primer nivel a colaboradores que trabajaban de forma remota, conectándome a sus equipos para diagnosticar y resolver incidencias técnicas. Di soporte sobre Orange, la máquina virtual utilizada por la empresa, atendiendo casos de conectividad, configuración y audio, y aseguré la continuidad operativa de los operadores remotos — lo que fortaleció mis habilidades de atención al usuario, comunicación y resolución de problemas.`},
+    {k:'blank'},
+    {k:'code', html:`${PN('}')}`},
+  ]
+};
+
+function projectFile(name, icon, lang, comment, tagsHtml, bulletsProse){
+  return {
+    name, icon, lang,
+    lines: [
+      {k:'code', html: comment},
+      {k:'blank'},
+      {k:'prose', html:`${IND(0)}${tagsHtml}`},
+      {k:'blank'},
+      {k:'prose', html: bulletsProse},
+    ]
+  };
+}
+
+FILES['proj-jdk'] = {
+  name:'JDKLauncher.java', icon:'☕', lang:'Java',
+  lines:[
+    {k:'code', html:`${PN('//')} <a href="https://github.com/aselixcore/JDKLauncher" target="_blank" rel="noopener">github.com/aselixcore/JDKLauncher</a> · v1.0.1`},
+    {k:'code', html:`${KW('public')} ${KW('class')} ${TP('JDKLauncher')} ${PN('{')}`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}<span class="tag">Java</span><span class="tag">JavaFX</span><span class="tag">Maven</span><span class="tag">Jackson</span>`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}Resolví un problema real de developers Java: cambiar entre JDK 8, 17 y 21 sin editar PATH o JAVA_HOME globalmente, con entornos aislados por terminal. Detecté JDKs de 8+ proveedores (Adoptium, Corretto, Zulu, GraalVM, BellSoft, Microsoft) y soporté 6 tipos de terminal (PowerShell, CMD, Git Bash, WSL, Windows Terminal). Publiqué una release portable — sin instalador, sin permisos de administrador, Java incluido. Integré Maven/Gradle, variables de entorno por JDK, pinning, búsqueda en vivo, temas claro/oscuro y bandeja del sistema. Generé perfiles JSON de Windows Terminal con GUIDs determinísticos e integré la Foojay Discovery API. Escribí tests unitarios para EnvironmentManager, JdkValidator y ConfigManager; persistí configuración vía Jackson en ~/.jdklauncher/.`},
+    {k:'blank'},
+    {k:'code', html:`${PN('}')}`},
+  ]
+};
+
+FILES['proj-arm'] = {
+  name:'ARMOnline.js', icon:'🟨', lang:'JavaScript',
+  lines:[
+    {k:'code', html:`${PN('//')} Auto Replay Music · <a href="https://github.com/aselixcore" target="_blank" rel="noopener">github.com/aselixcore</a>`},
+    {k:'code', html:`${KW('class')} ${TP('ARMOnline')} ${PN('{')}`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}<span class="tag">Vanilla JS</span><span class="tag">HTML5</span><span class="tag">CSS3</span><span class="tag">Canvas API</span>`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}Construí un reproductor de música completo para navegador — coverflow 3D, controles, búsqueda, login, temas dinámicos — sin npm ni build tools. Diseñé una clase MockAudioPlayer que replica la API de HTMLAudioElement, desacoplando la UI del audio real para mantener el proyecto portable. Implementé theming dinámico que samplea el arte de tapa vía Canvas API y actualiza CSS custom properties en tiempo real según luminancia. Construí un carrusel 3D con física, momentum scrolling y requestAnimationFrame, en ~800 líneas de ES6+ desde cero.`},
+    {k:'blank'},
+    {k:'code', html:`${PN('}')}`},
+  ]
+};
+
+FILES['proj-beam'] = {
+  name:'BeamNGBlenderToolkit.py', icon:'🐍', lang:'Python',
+  lines:[
+    {k:'code', html:`${PN('#')} en desarrollo`},
+    {k:'code', html:`${KW('class')} ${TP('BeamNGBlenderToolkit')}${PN(':')}`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}<span class="tag">Python</span><span class="tag">Blender API (bpy)</span><span class="tag">BeamNG.drive</span>`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}Desarrollo un complemento para Blender orientado a optimizar el flujo de trabajo en la creación de vehículos para BeamNG.drive. Automatizo tareas repetitivas del pipeline y organizo la estructura de assets. Facilito la integración con el sistema JBeam, mejorando la productividad durante el desarrollo de mods.`},
+  ]
+};
+
+FILES['proj-garage'] = {
+  name:'TheVirtualGarage.html', icon:'🌐', lang:'HTML',
+  lines:[
+    {k:'code', html:`${PN('&lt;!--')} <a href="https://github.com/aselixcore" target="_blank" rel="noopener">github.com/aselixcore</a> ${PN('--&gt;')}`},
+    {k:'code', html:`${PN('&lt;')}${KW('section')} ${FN('id')}${PN('=')}${STR('"the-virtual-garage"')}${PN('&gt;')}`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}<span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">Diseño retro</span>`},
+    {k:'blank'},
+    {k:'prose', html:`${IND(1)}Construí un sitio estático multi-página — 6 páginas, hojas de estilo dedicadas por marca, galerías de imágenes, GIFs y audio — como producto temático completo. Elegí una estética retro de inicios de los 2000 (marquees, tipografía bold, imágenes de fondo) para practicar identidad visual.`},
+    {k:'blank'},
+    {k:'code', html:`${PN('&lt;/')}${KW('section')}${PN('&gt;')}`},
+  ]
+};
+
+FILES['stack'] = {
+  name:'stack.json', icon:'{}', lang:'JSON',
+  lines:[
+    {k:'code', html:`${PN('{')}`},
+    {k:'code', html:`${IND(1)}${STR('"lenguajes"')}${PN(':')} ${STR('"Java (J2SE · J2EE · JavaFX), Python, JavaScript (ES6+), HTML5, CSS3"')}${PN(',')}`},
+    {k:'code', html:`${IND(1)}${STR('"cloud"')}${PN(':')} ${STR('"Google Cloud Platform (GCP) — Cloud Digital Leader (en curso)"')}${PN(',')}`},
+    {k:'code', html:`${IND(1)}${STR('"frameworks_y_herramientas"')}${PN(':')} ${STR('"JavaFX, Jackson, Blender API (bpy), Maven 3.8+, Git, GitHub, VS Code"')}${PN(',')}`},
+    {k:'code', html:`${IND(1)}${STR('"conceptos"')}${PN(':')} ${STR('"OOP, arquitectura event-driven, Canvas API, REST APIs, JSON, Unit Testing (JUnit), automatización de workflows"')}`},
+    {k:'code', html:`${PN('}')}`},
+  ]
+};
+
+FILES['educacion'] = {
+  name:'educacion.md', icon:'📄', lang:'Markdown',
+  lines:[
+    {k:'code', html:`${PN('##')} Educación`},
+    {k:'blank'},
+    {k:'prose', html:`<b>Experto en Programación Empresarial Java</b> — Aplicaciones J2EE, J2SE y JAM · Aprender 21 <span class="tag">Completado</span>`},
+    {k:'blank'},
+    {k:'prose', html:`<b>Introducción a la Programación</b> — UTN, Universidad Tecnológica Nacional`},
+  ]
+};
+
+FILES['certificaciones'] = {
+  name:'certificaciones.md', icon:'📄', lang:'Markdown',
+  lines:[
+    {k:'code', html:`${PN('##')} Certificaciones`},
+    {k:'blank'},
+    {k:'prose', html:`<b>Google Cloud Digital Leader</b> — Google Cloud Skills Boost <span class="tag">en curso</span> · <a href="https://skills.google/paths/9" target="_blank" rel="noopener">skills.google/paths/9</a>`},
+  ]
+};
+
+FILES['contacto'] = {
+  name:'contacto.txt', icon:'📇', lang:'Plain Text',
+  lines:[
+    {k:'code', html:`Alexis Zapia`},
+    {k:'code', html:`Java Developer · Buenos Aires, Argentina`},
+    {k:'blank'},
+    {k:'prose', html:`<div class="links-row"><a href="mailto:ale03.dev@gmail.com">✉ ale03.dev@gmail.com</a><a href="https://github.com/aselixcore" target="_blank" rel="noopener">⌥ github.com/aselixcore</a><a href="https://linkedin.com/in/alexiszapia" target="_blank" rel="noopener">in linkedin.com/in/alexiszapia</a></div>`},
+  ]
+};
+
+/* =========================================================
+   Render de archivo activo
+   ========================================================= */
+const codeView = document.getElementById('codeView');
+const tabbar = document.getElementById('tabbar');
+const statusLang = document.getElementById('statusLang');
+const statusLine = document.getElementById('statusLine');
+
+let openTabs = [];
+let activeFile = null;
+
+function renderFile(id){
+  const file = FILES[id];
+  if(!file) return;
+  codeView.innerHTML = '';
+  let n = 0;
+  file.lines.forEach(line=>{
+    n++;
+    const row = document.createElement('div');
+    row.className = 'line';
+    const content = line.k === 'blank' ? '&nbsp;' : line.html;
+    const proseClass = line.k === 'prose' ? 'prose' : '';
+    row.innerHTML = `<div class="line-no">${n}</div><div class="line-content ${proseClass}">${content}</div>`;
+    codeView.appendChild(row);
+  });
+  statusLang.textContent = file.lang;
+  statusLine.textContent = n;
+  codeView.scrollIntoView({block:'nearest'});
+  document.querySelector('.code-scroll').scrollTop = 0;
+}
+
+function renderTabs(){
+  tabbar.innerHTML = '';
+  openTabs.forEach(id=>{
+    const file = FILES[id];
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (id === activeFile ? ' active' : '');
+    tab.innerHTML = `<span class="icon">${file.icon}</span> ${file.name} <span class="tab-close" data-close="${id}">×</span>`;
+    tab.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('tab-close')) return;
+      openFile(id);
+    });
+    tab.querySelector('.tab-close').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      closeTab(id);
+    });
+    tabbar.appendChild(tab);
+  });
+}
+
+function openFile(id){
+  if(!FILES[id]) return;
+  if(!openTabs.includes(id)) openTabs.push(id);
+  activeFile = id;
+  renderTabs();
+  renderFile(id);
+
+  document.querySelectorAll('.explorer .node[data-file]').forEach(n=>n.classList.remove('active'));
+  const navNode = document.querySelector(`.explorer .node[data-file="${id}"]`);
+  if(navNode) navNode.classList.add('active');
+
+  if(window.innerWidth <= 780){
+    document.getElementById('explorer').classList.remove('open');
+    document.getElementById('explorerToggle').textContent = '▸ Explorador';
+  }
+}
+
+function closeTab(id){
+  const idx = openTabs.indexOf(id);
+  if(idx === -1) return;
+  openTabs.splice(idx, 1);
+  if(activeFile === id){
+    const next = openTabs[idx] || openTabs[idx - 1];
+    if(next){ activeFile = next; renderFile(next); }
+    else { activeFile = null; codeView.innerHTML = ''; }
+  }
+  renderTabs();
+}
+
+/* ---------- explorer: folders collapse, files open ---------- */
+document.querySelectorAll('.explorer .node[data-folder]').forEach(node=>{
+  node.addEventListener('click', ()=>{
+    const key = node.getAttribute('data-folder');
+    const body = document.querySelector(`.tree-sub[data-folder-body="${key}"]`);
+    const arrow = node.querySelector('.folder-arrow');
+    const collapsed = body.classList.toggle('collapsed');
+    arrow.classList.toggle('closed', collapsed);
+  });
+});
+
+document.querySelectorAll('.explorer .node[data-file]').forEach(node=>{
+  node.addEventListener('click', ()=> openFile(node.getAttribute('data-file')));
+});
+
+document.getElementById('explorerToggle').addEventListener('click', ()=>{
+  const ex = document.getElementById('explorer');
+  const open = ex.classList.toggle('open');
+  document.getElementById('explorerToggle').textContent = (open ? '▾' : '▸') + ' Explorador';
+});
+
+/* abrir README.md por defecto, como al clonar un repo */
+openFile('perfil');
+
+/* =========================================================
+   Terminal
+   ========================================================= */
+const termBody = document.getElementById('termBody');
+const termInput = document.getElementById('termInput');
+
+function printLine(text, cls=''){
+  const d = document.createElement('div');
+  d.className = 'terminal-line ' + cls;
+  d.innerHTML = text;
+  termBody.appendChild(d);
+  termBody.scrollTop = termBody.scrollHeight;
+}
+
+function bootSequence(){
+  const seq = [
+    {t:500,  fn:()=>printLine('<span class="prompt">$</span> git clone github.com/aselixcore/portfolio.git')},
+    {t:1000, fn:()=>printLine('Listo. README.md abierto.', 'out')},
+    {t:1400, fn:()=>printLine("Escribí 'help' para ver comandos disponibles.", 'out')},
+  ];
+  seq.forEach(s=>setTimeout(s.fn, s.t));
+}
+bootSequence();
+
+const COMMANDS = {
+  help: () => [
+    'Comandos disponibles:',
+    '  about        — abrir README.md',
+    '  experiencia  — abrir SoporteTecnicoIT.java',
+    '  projects     — listar Proyectos/',
+    '  open &lt;archivo&gt; — abrir un archivo (ej: open stack.json)',
+    '  stack        — abrir stack.json',
+    '  contact      — abrir contacto.txt',
+    '  ls           — listar archivos',
+    '  whoami',
+    '  clear        — limpiar terminal',
+  ],
+  whoami: () => ['alexis · java developer · buenos aires, ar'],
+  about: () => { openFile('perfil'); return ['abriendo README.md…']; },
+  experiencia: () => { openFile('exp-cat'); return ['abriendo SoporteTecnicoIT.java…']; },
+  projects: () => ['JDKLauncher.java  ARMOnline.js  BeamNGBlenderToolkit.py  TheVirtualGarage.html', "probá: open jdklauncher"],
+  stack: () => { openFile('stack'); return ['abriendo stack.json…']; },
+  contact: () => { openFile('contacto'); return ['abriendo contacto.txt…']; },
+  ls: () => ['README.md  Experiencia/  Proyectos/  stack.json  educacion.md  certificaciones.md  contacto.txt'],
+  clear: () => { termBody.innerHTML=''; return null; },
+};
+
+const OPEN_ALIASES = {
+  jdklauncher:'proj-jdk', armonline:'proj-arm', beamng:'proj-beam',
+  garage:'proj-garage', virtualgarage:'proj-garage', readme:'perfil',
+  educacion:'educacion', certificaciones:'certificaciones',
+};
+
+termInput.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  const raw = termInput.value.trim();
+  if(!raw) return;
+  printLine('<span class="prompt">alexis@portfolio:~$</span> ' + raw);
+  termInput.value = '';
+  const parts = raw.toLowerCase().split(/\s+/);
+  const cmd = parts[0];
+
+  if(cmd === 'open' && parts[1]){
+    const key = parts[1].replace(/\.\w+$/, '');
+    const id = OPEN_ALIASES[key] || key;
+    if(FILES[id]){ openFile(id); printLine(`abriendo ${FILES[id].name}…`, 'out'); }
+    else printLine(`no se encontró el archivo "${parts[1]}"`, 'out');
+    return;
+  }
+
+  if(COMMANDS[cmd]){
+    const out = COMMANDS[cmd]();
+    if(out) out.forEach(l => printLine(l, 'out'));
+  } else {
+    printLine(`bash: ${raw}: comando no encontrado — probá 'help'`, 'out');
+  }
+});
+</script>
+
+<script>
+/* =========================================================
+   BOOT SCREEN — intro estilo Commodore 64 / cassette (GTA-VC style)
+   ========================================================= */
+(function(){
+  const screen = document.getElementById('bootScreen');
+  const linesBox = document.getElementById('bootLines');
+  const soundToggle = document.getElementById('soundToggle');
+  const win = document.querySelector('.window');
+
+  let soundOn = true;
+  soundToggle.addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    soundToggle.textContent = soundOn ? 'SONIDO: ON' : 'SONIDO: OFF';
+  });
+
+  let audioCtx = null;
+  function ctx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function playTapeNoise(durationMs){
+    if(!soundOn) return;
+    const ac = ctx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = 'square';
+    gain.gain.value = 0.025;
+    osc.connect(gain).connect(ac.destination);
+    let t = ac.currentTime;
+    osc.frequency.setValueAtTime(220, t);
+    const steps = Math.floor(durationMs / 90);
+    for(let i=0;i<steps;i++){
+      t += 0.09;
+      osc.frequency.setValueAtTime(150 + Math.random()*900, t);
+    }
+    osc.start();
+    osc.stop(ac.currentTime + durationMs/1000 + 0.05);
+  }
+  function beep(freq=880, dur=140){
+    if(!soundOn) return;
+    const ac = ctx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = 'square';
+    gain.gain.value = 0.05;
+    osc.frequency.value = freq;
+    osc.connect(gain).connect(ac.destination);
+    osc.start();
+    osc.stop(ac.currentTime + dur/1000);
+  }
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function addLine(text=''){
+    const d = document.createElement('div');
+    d.textContent = text;
+    linesBox.appendChild(d);
+    return d;
+  }
+
+  async function typeLine(text, speed=22){
+    const d = addLine('');
+    const cursor = document.createElement('span');
+    cursor.className = 'boot-cursor';
+    d.appendChild(document.createTextNode(''));
+    for(let i=0;i<text.length;i++){
+      d.textContent = text.slice(0, i+1);
+      await sleep(speed);
+    }
+    return d;
+  }
+
+  function waitForContinue(){
+    return new Promise(resolve=>{
+      const go = ()=>{
+        window.removeEventListener('keydown', go);
+        window.removeEventListener('click', go);
+        window.removeEventListener('touchstart', go);
+        resolve();
+      };
+      window.addEventListener('keydown', go, {once:true});
+      window.addEventListener('click', go, {once:true});
+      window.addEventListener('touchstart', go, {once:true});
+    });
+  }
+
+  async function progressBar(durationMs){
+    const width = 30;
+    const row = addLine('');
+    const start = performance.now();
+    playTapeNoise(durationMs);
+    let glitchTimer = setInterval(()=>{
+      screen.classList.add('glitch');
+      setTimeout(()=>screen.classList.remove('glitch'), 60);
+    }, 650);
+    while(true){
+      const elapsed = performance.now() - start;
+      const pct = Math.min(100, Math.round((elapsed/durationMs)*100));
+      const filled = Math.round((pct/100)*width);
+      row.textContent = '[' + '█'.repeat(filled) + '░'.repeat(width-filled) + `] ${pct}%`;
+      if(pct >= 100) break;
+      await sleep(60);
+    }
+    clearInterval(glitchTimer);
+  }
+
+  async function bootSequence(){
+    addLine('    **** ALEXIS SYSTEMS 64 BASIC V2 ****');
+    addLine('');
+    addLine('64K RAM SYSTEM  38911 BASIC BYTES FREE');
+    await sleep(150);
+    addLine('CPU: MOS 6510 @ 1.02 MHZ');
+    await sleep(120);
+    addLine('VIDEO: VIC-II (40 COLS)   AUDIO: SID 6581');
+    await sleep(120);
+    addLine('DATASETTE C2N.......... ATTACHED');
+    addLine('');
+    addLine('READY.');
+    await sleep(300);
+    await typeLine('LOAD "ALEXISZAPIA",8,1');
+    addLine('');
+    addLine('PRESS PLAY ON TAPE');
+    await sleep(400);
+    const prompt = addLine('▸ presioná una tecla o tocá la pantalla para continuar');
+    prompt.classList.add('boot-blink');
+
+    await waitForContinue();
+    prompt.remove();
+
+    addLine('');
+    addLine('SEARCHING FOR ALEXISZAPIA');
+    await sleep(700);
+    addLine('FOUND ALEXISZAPIA');
+    await sleep(400);
+    addLine('LOADING');
+    await sleep(200);
+    await progressBar(3600);
+
+    addLine('');
+    addLine('READY.');
+    await sleep(250);
+    await typeLine('RUN');
+    await sleep(350);
+    beep(880, 130);
+    await sleep(160);
+    beep(1320, 160);
+    await sleep(300);
+
+    screen.classList.add('flash');
+    await sleep(220);
+    screen.classList.add('hidden');
+    document.body.classList.add('booted');
+    win.classList.add('visible');
+    await sleep(400);
+    screen.remove();
+  }
+
+  bootSequence();
+})();
+</script>
+</body>
+</html>
