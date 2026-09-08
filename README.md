@@ -9,7 +9,7 @@ Antes de entrar al editor, una intro simula el arranque de una Commodore 64
 cargando un cassette — con sonido generado en vivo con Web Audio, sin archivos
 de audio externos.
 
-**Sitio en vivo:** https://aselixcore.github.io
+**Sitio en vivo:** https://aselixcore.github.io/portfolio/
 
 ## Stack
 
