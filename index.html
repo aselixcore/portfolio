@@ -325,9 +325,37 @@
   @media (max-width:780px){
     .boot-screen{ font-size:13px; padding:26px 20px; }
   }
+
+  /* ================= CURSOR PERSONALIZADO ================= */
+  @media (hover:hover) and (pointer:fine){
+    body, a, .node, .tab, .tab-close, .fold-btn, .boot-sound-toggle,
+    .terminal-input, .explorer-toggle{
+      cursor:none;
+    }
+  }
+  .cursor-dot{
+    position:fixed;
+    top:0; left:0;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:#000;
+    border:2px solid #a685ff;
+    pointer-events:none;
+    z-index:2000;
+    transform:translate(-50%,-50%);
+    transition:width .18s ease, height .18s ease, opacity .2s ease;
+    opacity:0;
+  }
+  .cursor-dot.ready{ opacity:1; }
+  .cursor-dot.hover{
+    width:30px; height:30px;
+    background:rgba(0,0,0,.35);
+  }
 </style>
 </head>
 <body>
+
+<div class="cursor-dot" id="cursorDot"></div>
 
 <div class="boot-screen" id="bootScreen">
   <div class="boot-sound-toggle" id="soundToggle">SONIDO: ON</div>
@@ -905,6 +933,53 @@ termInput.addEventListener('keydown', (e)=>{
   }
 
   bootSequence();
+})();
+</script>
+
+<script>
+/* =========================================================
+   CURSOR PERSONALIZADO — punto negro, borde violeta, movimiento suave
+   ========================================================= */
+(function(){
+  const isFinePointer = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  if(!isFinePointer) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dot = document.getElementById('cursorDot');
+
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  let curX = mouseX;
+  let curY = mouseY;
+
+  window.addEventListener('mousemove', (e)=>{
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.classList.add('ready');
+    if(reduceMotion){
+      curX = mouseX; curY = mouseY;
+      dot.style.transform = `translate(${curX}px, ${curY}px) translate(-50%,-50%)`;
+    }
+  });
+
+  if(!reduceMotion){
+    (function loop(){
+      curX += (mouseX - curX) * 0.18;
+      curY += (mouseY - curY) * 0.18;
+      dot.style.transform = `translate(${curX}px, ${curY}px) translate(-50%,-50%)`;
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  const HOVER_SELECTOR = 'a, .node, .tab, .tab-close, .fold-btn, .boot-sound-toggle, .terminal-input, .explorer-toggle';
+
+  document.addEventListener('mouseover', (e)=>{
+    if(e.target.closest(HOVER_SELECTOR)) dot.classList.add('hover');
+  });
+  document.addEventListener('mouseout', (e)=>{
+    if(e.target.closest(HOVER_SELECTOR)) dot.classList.remove('hover');
+  });
+  document.addEventListener('mouseleave', ()=> dot.classList.remove('ready'));
 })();
 </script>
 </body>
